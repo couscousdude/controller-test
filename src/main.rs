@@ -31,6 +31,18 @@ impl KeybindManager {
     }
 }
 
+fn transform(x: i32) -> f32 {
+    (x as f32 / 10.0).powi(3)
+}
+
+fn handle_update(v_x: &Mutex<i32>, v_y: &Mutex<i32>) {
+    println!(
+        "v_x: {}, v_y: {}",
+        transform(*v_x.lock().unwrap()),
+        transform(*v_y.lock().unwrap())
+    );
+}
+
 fn main() {
     let (tx, rx): (Sender<Keycode>, Receiver<Keycode>) = channel();
 
@@ -52,7 +64,7 @@ fn main() {
                     _ => (),
                 }
             }
-            thread::sleep(std::time::Duration::from_millis(100));
+            thread::sleep(std::time::Duration::from_millis(50));
         }
     });
 
@@ -63,48 +75,44 @@ fn main() {
         let v_x = v_x.clone();
         let v_y = v_y.clone();
         move || {
+            if *v_y.lock().unwrap() >= 10 {
+                return;
+            }
             *v_y.lock().unwrap() += 1;
-            println!(
-                "v_x: {}, v_y: {}",
-                *v_x.lock().unwrap(),
-                *v_y.lock().unwrap()
-            );
+            handle_update(&v_x, &v_y);
         }
     });
     keybind_manager.bind_key(Keycode::A, {
         let v_x = v_x.clone();
         let v_y = v_y.clone();
         move || {
+            if *v_x.lock().unwrap() <= -10 {
+                return;
+            }
             *v_x.lock().unwrap() -= 1;
-            println!(
-                "v_x: {}, v_y: {}",
-                *v_x.lock().unwrap(),
-                *v_y.lock().unwrap()
-            );
+            handle_update(&v_x, &v_y);
         }
     });
     keybind_manager.bind_key(Keycode::D, {
         let v_x = v_x.clone();
         let v_y = v_y.clone();
         move || {
+            if *v_x.lock().unwrap() >= 10 {
+                return;
+            }
             *v_x.lock().unwrap() += 1;
-            println!(
-                "v_x: {}, v_y: {}",
-                *v_x.lock().unwrap(),
-                *v_y.lock().unwrap()
-            );
+            handle_update(&v_x, &v_y);
         }
     });
     keybind_manager.bind_key(Keycode::S, {
         let v_x = v_x.clone();
         let v_y = v_y.clone();
         move || {
+            if *v_y.lock().unwrap() <= -10 {
+                return;
+            }
             *v_y.lock().unwrap() -= 1;
-            println!(
-                "v_x: {}, v_y: {}",
-                *v_x.lock().unwrap(),
-                *v_y.lock().unwrap()
-            );
+            handle_update(&v_x, &v_y);
         }
     });
     keybind_manager.bind_key(Keycode::B, {
@@ -113,11 +121,7 @@ fn main() {
         move || {
             *v_y.lock().unwrap() = 0;
             *v_x.lock().unwrap() = 0;
-            println!(
-                "v_x: {}, v_y: {}",
-                *v_x.lock().unwrap(),
-                *v_y.lock().unwrap()
-            );
+            handle_update(&v_x, &v_y);
         }
     });
 
